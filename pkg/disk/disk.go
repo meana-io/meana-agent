@@ -1,7 +1,6 @@
 package disk
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/jaypipes/ghw"
@@ -50,6 +49,11 @@ func Data() (*DiskData, error) {
 
 	partitions, err := disk.Partitions(true)
 
+	if err != nil {
+		log.Printf("Error getting partitions info: %v", err)
+		return nil, err
+	}
+
 	for _, partition := range partitions {
 		usage, _ := disk.Usage(partition.Mountpoint)
 		var localPartition Partition
@@ -59,7 +63,6 @@ func Data() (*DiskData, error) {
 		localPartition.Size = usage.Total
 		localPartition.SizeUsed = usage.Used
 		data.Partitions = append(data.Partitions, &localPartition)
-		fmt.Printf("%v\n", localPartition)
 	}
 
 	return &data, nil
