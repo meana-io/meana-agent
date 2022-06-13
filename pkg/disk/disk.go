@@ -1,32 +1,33 @@
 package disk
 
 import (
-	"fmt"
 	"log"
+	"strconv"
+	"strings"
 
 	"github.com/jaypipes/ghw"
 	"github.com/shirou/gopsutil/disk"
 )
 
 type DiskData struct {
-	Disks      []*Disk      `json:"disks"`
-	Partitions []*Partition `json:"partitions"`
+	Disks []*Disk `json:"disks"`
 }
 
 type Disk struct {
-	Name         string `json:"name"`
-	Vendor       string `json:"vendor"`
-	Model        string `json:"model"`
-	SerialNumber string `json:"serial_number"`
-	Size         uint64 `json:"size_bytes"`
+	Name         string       `json:"name"`
+	Path         string       `json:"path"`
+	Vendor       string       `json:"manufacture"`
+	Model        string       `json:"model"`
+	SerialNumber string       `json:"serialNumber"`
+	Size         string       `json:"capacity"`
+	Partitions   []*Partition `json:"partitions"`
 }
 
 type Partition struct {
-	Device     string `json:"device"`
-	Type       string `json:"type"`
-	MountPoint string `json:"mount_point"`
-	Size       uint64 `json:"size"`
-	SizeUsed   uint64 `json:"size_used"`
+	Type       string `json:"fileSystem"`
+	MountPoint string `json:"path"`
+	Size       string `json:"capacity"`
+	SizeUsed   string `json:"usedSpace"`
 }
 
 func Data() (*DiskData, error) {
@@ -43,23 +44,30 @@ func Data() (*DiskData, error) {
 		localDisk.Model = disk.Model
 		localDisk.Name = disk.Name
 		localDisk.Vendor = disk.Vendor
-		localDisk.Size = disk.SizeBytes
+		localDisk.Size = strconv.FormatUint(disk.SizeBytes, 10)
 		localDisk.SerialNumber = disk.SerialNumber
 		data.Disks = append(data.Disks, &localDisk)
 	}
 
-	partitions, err := disk.Partitions(true)
+	partitions, err := disk.Partitions(false)
+
+	if err != nil {
+		log.Printf("Error getting partitions info: %v", err)
+		return nil, err
+	}
 
 	for _, partition := range partitions {
 		usage, _ := disk.Usage(partition.Mountpoint)
 		var localPartition Partition
-		localPartition.Device = partition.Device
 		localPartition.Type = usage.Fstype
 		localPartition.MountPoint = partition.Mountpoint
-		localPartition.Size = usage.Total
-		localPartition.SizeUsed = usage.Used
-		data.Partitions = append(data.Partitions, &localPartition)
-		fmt.Printf("%v\n", localPartition)
+		localPartition.Size = strconv.FormatUint(usage.Total, 10)
+		localPartition.SizeUsed = strconv.FormatUint(usage.Used, 10)
+		for _, disk := range data.Disks {
+			if strings.Contains(partition.Device, disk.Name) {
+				disk.Partitions = append(disk.Partitions, &localPartition)
+			}
+		}
 	}
 
 	return &data, nil
