@@ -10,6 +10,7 @@ require (
 	github.com/jaypipes/pcidb v1.0.0 // indirect
 	github.com/joho/godotenv v1.4.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
+	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
