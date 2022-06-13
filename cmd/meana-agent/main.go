@@ -16,12 +16,16 @@ import (
 const AgentInterval = 5 * time.Second
 
 type AgentData struct {
-	Disk *disk.DiskData `json:"disk"`
+	Disks *disk.DiskData `json:"disks"`
 }
 
 func ValidateEnv() error {
 	if os.Getenv("MEANA_SERVER_ADDR") == "" {
 		return fmt.Errorf("meana server address not specified")
+	}
+
+	if os.Getenv("MEANA_NAME") == "" {
+		return fmt.Errorf("meana name not specified")
 	}
 
 	return nil
@@ -35,7 +39,7 @@ func CollectData() (*AgentData, error) {
 		return nil, err
 	}
 
-	data.Disk = diskData
+	data.Disks = diskData
 
 	return &data, nil
 }
@@ -45,11 +49,35 @@ func UploadData(data *AgentData) error {
 		Timeout: 15 * time.Second,
 	}
 
-	postBody, _ := json.Marshal(data)
+	postBody, _ := json.Marshal(data.Disks)
 
 	responseBody := bytes.NewBuffer(postBody)
 
-	resp, err := c.Post(os.Getenv("MEANA_SERVER_ADDR")+"/tmp", "application/json", responseBody)
+	req, err := http.NewRequest(http.MethodPatch, os.Getenv("MEANA_SERVER_ADDR")+"/api/node-disks/"+os.Getenv("MEANA_DISK_ID"), responseBody)
+	req.Header.Set("Content-Type", "application/json")
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.Do(req)
+
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	postBody, _ = json.Marshal(data)
+
+	responseBody = bytes.NewBuffer(postBody)
+
+	req, err = http.NewRequest(http.MethodPatch, os.Getenv("MEANA_SERVER_ADDR")+"/api/node-disk-partitions/"+os.Getenv("MEANA_PARTITION_ID"), responseBody)
+	req.Header.Set("Content-Type", "application/json")
+	if err != nil {
+		return err
+	}
+
+	resp, err = c.Do(req)
 
 	if err != nil {
 		return err
