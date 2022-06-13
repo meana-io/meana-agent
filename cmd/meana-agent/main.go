@@ -11,12 +11,18 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/meana-io/meana-agent/pkg/disk"
+	"github.com/meana-io/meana-agent/pkg/ram"
+	"github.com/meana-io/meana-agent/pkg/util"
 )
 
 const AgentInterval = 5 * time.Second
 
+var Debug bool = false
+
 type AgentData struct {
-	Disks *disk.DiskData `json:"disks"`
+	Name  string       `json:"name"`
+	Disks []*disk.Disk `json:"disks"`
+	Ram   *ram.RamData `json:"ram"`
 }
 
 func ValidateEnv() error {
@@ -28,18 +34,30 @@ func ValidateEnv() error {
 		return fmt.Errorf("meana name not specified")
 	}
 
+	if os.Getenv("DEBUG") == "true" {
+		Debug = true
+	}
+
 	return nil
 }
 
 func CollectData() (*AgentData, error) {
 	var data AgentData
-	diskData, err := disk.Data()
+	diskData, err := disk.GetDiskData()
 
 	if err != nil {
 		return nil, err
 	}
 
-	data.Disks = diskData
+	ramData, err := ram.GetRamData()
+
+	if err != nil {
+		return nil, err
+	}
+
+	data.Name = os.Getenv("MEANA_NAME")
+	data.Disks = diskData.Disks
+	data.Ram = ramData
 
 	return &data, nil
 }
@@ -49,11 +67,16 @@ func UploadData(data *AgentData) error {
 		Timeout: 15 * time.Second,
 	}
 
-	postBody, _ := json.Marshal(data.Disks)
+	postBody, _ := json.Marshal(data)
 
 	responseBody := bytes.NewBuffer(postBody)
 
-	req, err := http.NewRequest(http.MethodPatch, os.Getenv("MEANA_SERVER_ADDR")+"/api/node-disks/"+os.Getenv("MEANA_DISK_ID"), responseBody)
+	if Debug {
+		log.Println("sending data")
+		log.Println(util.PrettyPrint(data))
+	}
+
+	req, err := http.NewRequest(http.MethodPost, os.Getenv("MEANA_SERVER_ADDR")+"/api/global/", responseBody)
 	req.Header.Set("Content-Type", "application/json")
 	if err != nil {
 		return err
@@ -67,23 +90,13 @@ func UploadData(data *AgentData) error {
 
 	defer resp.Body.Close()
 
-	postBody, _ = json.Marshal(data)
-
-	responseBody = bytes.NewBuffer(postBody)
-
-	req, err = http.NewRequest(http.MethodPatch, os.Getenv("MEANA_SERVER_ADDR")+"/api/node-disk-partitions/"+os.Getenv("MEANA_PARTITION_ID"), responseBody)
-	req.Header.Set("Content-Type", "application/json")
-	if err != nil {
-		return err
+	if resp.StatusCode != 200 && resp.StatusCode != 201 {
+		return fmt.Errorf("error uploading data, status code: %v", resp.StatusCode)
 	}
 
-	resp, err = c.Do(req)
-
-	if err != nil {
-		return err
+	if Debug {
+		log.Println("data sent")
 	}
-
-	defer resp.Body.Close()
 
 	return nil
 }
