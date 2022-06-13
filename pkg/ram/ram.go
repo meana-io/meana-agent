@@ -1,10 +1,9 @@
 package ram
 
 import (
-	"log"
 	"strconv"
 
-	"github.com/jaypipes/ghw"
+	"github.com/pbnjay/memory"
 )
 
 type RamData struct {
@@ -13,17 +12,13 @@ type RamData struct {
 }
 
 func GetRamData() (*RamData, error) {
-	mem, err := ghw.Memory()
-
-	if err != nil {
-		log.Printf("Error getting memory info: %v", err)
-		return nil, err
-	}
-
 	var data RamData
 
-	data.Total = strconv.FormatInt(mem.TotalPhysicalBytes, 10)
-	data.Used = strconv.FormatInt(mem.TotalPhysicalBytes-mem.TotalUsableBytes, 10)
+	total := memory.TotalMemory()
+	free := memory.FreeMemory()
+
+	data.Total = strconv.FormatUint(total, 10)
+	data.Used = strconv.FormatUint(total-free, 10)
 
 	return &data, nil
 }
