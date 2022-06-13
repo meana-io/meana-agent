@@ -30,7 +30,7 @@ type Partition struct {
 	SizeUsed   string `json:"usedSpace"`
 }
 
-func Data() (*DiskData, error) {
+func GetDiskData() (*DiskData, error) {
 	block, err := ghw.Block()
 	if err != nil {
 		log.Printf("Error getting block storage info: %v", err)
@@ -46,6 +46,19 @@ func Data() (*DiskData, error) {
 		localDisk.Vendor = disk.Vendor
 		localDisk.Size = strconv.FormatUint(disk.SizeBytes, 10)
 		localDisk.SerialNumber = disk.SerialNumber
+
+		if localDisk.Model == "unknown" {
+			localDisk.Model = ""
+		}
+
+		if localDisk.Vendor == "unknown" {
+			localDisk.Vendor = ""
+		}
+
+		if localDisk.SerialNumber == "unknown" {
+			localDisk.SerialNumber = ""
+		}
+
 		data.Disks = append(data.Disks, &localDisk)
 	}
 
@@ -71,8 +84,4 @@ func Data() (*DiskData, error) {
 	}
 
 	return &data, nil
-}
-
-func Changes() error {
-	return nil
 }
