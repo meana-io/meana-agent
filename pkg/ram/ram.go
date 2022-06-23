@@ -31,12 +31,12 @@ func GetRamData() (*RamData, error) {
 	// fmt.Printf(string(json.Marshal(byNameData)))
 
 	// or you can just access the data directly
-	// for handle, record := range dmi.Data {
-	// 	fmt.Println("Checking record:", handle)
-	// 	for k, v := range record {
-	// 		fmt.Printf("Key: %v Val: %v\n", k, v)
-	// 	}
-	// }
+	for handle, record := range dmi.Data {
+		fmt.Println("Checking record:", handle)
+		for k, v := range record {
+			fmt.Printf("Key: %v Val: %v\n", k, v)
+		}
+	}
 
 	total := mem.TotalMemory()
 	free := mem.FreeMemory()
