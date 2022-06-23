@@ -20,7 +20,7 @@ const AgentInterval = 5 * time.Second
 var Debug bool = false
 
 type AgentData struct {
-	Name  string       `json:"name"`
+	Uuid  string       `json:"nodeUuid"`
 	Disks []*disk.Disk `json:"disks"`
 	Ram   *ram.RamData `json:"ram"`
 }
@@ -30,8 +30,8 @@ func ValidateEnv() error {
 		return fmt.Errorf("meana server address not specified")
 	}
 
-	if os.Getenv("MEANA_NAME") == "" {
-		return fmt.Errorf("meana name not specified")
+	if os.Getenv("MEANA_UUID") == "" {
+		return fmt.Errorf("meana uuid not specified")
 	}
 
 	if os.Getenv("DEBUG") == "true" {
@@ -55,7 +55,7 @@ func CollectData() (*AgentData, error) {
 		return nil, err
 	}
 
-	data.Name = os.Getenv("MEANA_NAME")
+	data.Uuid = os.Getenv("MEANA_UUID")
 	data.Disks = diskData.Disks
 	data.Ram = ramData
 
