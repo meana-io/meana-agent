@@ -36,7 +36,7 @@ func ValidateEnv() error {
 		return fmt.Errorf("meana uuid not specified")
 	}
 
-	if os.Getenv("DEBUG") == "true" {
+	if os.Getenv("MEANA_DEBUG") == "true" {
 		Debug = true
 	}
 
