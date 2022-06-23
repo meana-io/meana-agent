@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/meana-io/meana-agent/pkg/cpu"
 	"github.com/meana-io/meana-agent/pkg/disk"
 	"github.com/meana-io/meana-agent/pkg/ram"
 	"github.com/meana-io/meana-agent/pkg/util"
@@ -20,9 +21,10 @@ const AgentInterval = 5 * time.Second
 var Debug bool = false
 
 type AgentData struct {
-	Name  string       `json:"name"`
+	Uuid  string       `json:"nodeUuid"`
 	Disks []*disk.Disk `json:"disks"`
 	Ram   *ram.RamData `json:"ram"`
+	Cpu   *cpu.CpuData `json:"cpu"`
 }
 
 func ValidateEnv() error {
@@ -30,11 +32,11 @@ func ValidateEnv() error {
 		return fmt.Errorf("meana server address not specified")
 	}
 
-	if os.Getenv("MEANA_NAME") == "" {
-		return fmt.Errorf("meana name not specified")
+	if os.Getenv("MEANA_UUID") == "" {
+		return fmt.Errorf("meana uuid not specified")
 	}
 
-	if os.Getenv("DEBUG") == "true" {
+	if os.Getenv("MEANA_DEBUG") == "true" {
 		Debug = true
 	}
 
@@ -55,9 +57,16 @@ func CollectData() (*AgentData, error) {
 		return nil, err
 	}
 
-	data.Name = os.Getenv("MEANA_NAME")
+	cpuData, err := cpu.GetCpuData()
+
+	if err != nil {
+		return nil, err
+	}
+
+	data.Uuid = os.Getenv("MEANA_UUID")
 	data.Disks = diskData.Disks
 	data.Ram = ramData
+	data.Cpu = cpuData
 
 	return &data, nil
 }

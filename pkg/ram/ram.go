@@ -3,7 +3,7 @@ package ram
 import (
 	"strconv"
 
-	"github.com/pbnjay/memory"
+	mem "github.com/pbnjay/memory"
 )
 
 type RamData struct {
@@ -14,8 +14,8 @@ type RamData struct {
 func GetRamData() (*RamData, error) {
 	var data RamData
 
-	total := memory.TotalMemory()
-	free := memory.FreeMemory()
+	total := mem.TotalMemory()
+	free := mem.FreeMemory()
 
 	data.Total = strconv.FormatUint(total, 10)
 	data.Used = strconv.FormatUint(total-free, 10)
