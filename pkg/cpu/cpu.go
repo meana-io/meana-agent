@@ -16,7 +16,7 @@ type CpuData struct {
 	Model         string `json:"model"`
 }
 
-func GetRamData() (*CpuData, error) {
+func GetCpuData() (*CpuData, error) {
 	var data CpuData
 
 	dmi := dmidecode.New()
