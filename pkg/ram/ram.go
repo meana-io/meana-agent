@@ -50,7 +50,7 @@ func GetRamData() (*RamData, error) {
 			return nil, err
 		}
 
-		byTypeData, _ := dmi.SearchByType(4)
+		byTypeData, _ := dmi.SearchByType(17)
 
 		for _, typeData := range byTypeData {
 			var data Ram
