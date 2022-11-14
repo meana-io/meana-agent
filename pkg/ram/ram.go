@@ -36,7 +36,7 @@ type Ram struct {
 	ConfiguredMemorySpeed  string `json:"configuredMemorySpeed"`
 	MinimumVoltage         string `json:"minimumVoltage"`
 	MaximumVoltage         string `json:"maximumVoltage"`
-	ConfiguredVolate       string `json:"configuredVolate"`
+	ConfiguredVoltage      string `json:"configuredVoltage"`
 }
 
 func GetRamData() (*RamData, error) {
@@ -60,7 +60,7 @@ func GetRamData() (*RamData, error) {
 			data.TotalWidth = typeData["Total Width"]
 			data.DataWidth = typeData["Data Width"]
 			data.Size = typeData["Size"]
-			data.FormFactor = typeData["FormFactor"]
+			data.FormFactor = typeData["Form Factor"]
 			data.Set = typeData["Set"]
 			data.Locator = typeData["Locator"]
 			data.BankLocator = typeData["Bank Locator"]
@@ -75,7 +75,7 @@ func GetRamData() (*RamData, error) {
 			data.ConfiguredMemorySpeed = typeData["Configured Memory Speed"]
 			data.MinimumVoltage = typeData["Minimum Voltage"]
 			data.MaximumVoltage = typeData["Maximum Voltage"]
-			data.ConfiguredVolate = typeData["Configured Volate"]
+			data.ConfiguredVoltage = typeData["Configured Voltage"]
 
 			ramData.Rams = append(ramData.Rams, &data)
 		}
