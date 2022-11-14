@@ -1,12 +1,9 @@
 package disk
 
 import (
+	"encoding/json"
 	"log"
-	"strconv"
-	"strings"
-
-	"github.com/jaypipes/ghw"
-	"github.com/shirou/gopsutil/disk"
+	"os/exec"
 )
 
 type DiskData struct {
@@ -31,57 +28,104 @@ type Partition struct {
 }
 
 func GetDiskData() (*DiskData, error) {
-	block, err := ghw.Block()
+	var data, err = listBlockDevices()
 	if err != nil {
-		log.Printf("Error getting block storage info: %v", err)
+		log.Printf("error getting disk info")
 		return nil, err
 	}
 
-	var data DiskData
+	return data, nil
+}
 
-	for _, disk := range block.Disks {
-		var localDisk Disk
-		localDisk.Model = disk.Model
-		localDisk.Name = disk.Name
-		localDisk.Vendor = disk.Vendor
-		localDisk.Size = strconv.FormatUint(disk.SizeBytes, 10)
-		localDisk.SerialNumber = disk.SerialNumber
+func listBlockDevices() (*DiskData, error) {
+	var myStoredVariable map[string]any
+	output, err := exec.Command(
+		"lsblk",
+		"-b", // output size in bytes
+		"-J", // output fields as key=value pairs
+		"-o",
+		"KNAME,FSTYPE,TYPE,FSSIZE,FSUSED,VENDOR,MODEL,SERIAL,PATH,MOUNTPOINT",
+	).Output()
 
-		if localDisk.Model == "unknown" {
-			localDisk.Model = ""
-		}
+	json.Unmarshal(output, &myStoredVariable)
 
-		if localDisk.Vendor == "unknown" {
-			localDisk.Vendor = ""
-		}
+	var disks DiskData
+	for _, diskElem := range myStoredVariable["blockdevices"].([]interface{}) {
+		var disk Disk
+		var loop bool = false
+		for diskKey, diskValue := range diskElem.(map[string]interface{}) {
+			switch diskKey {
+			case "kname":
+				if diskValue != nil {
+					disk.Name = diskValue.(string)
+				}
+			case "type":
+				if diskValue != nil {
+					if diskValue == "loop" {
+						loop = true
+						break
+					}
+				}
+			case "fssize":
+				if diskValue != nil {
+					disk.Size = diskValue.(string)
+				}
+			case "vendor":
+				if diskValue != nil {
+					disk.Vendor = diskValue.(string)
+				}
+			case "model":
+				if diskValue != nil {
+					disk.Model = diskValue.(string)
+				}
+			case "serial":
+				if diskValue != nil {
+					disk.SerialNumber = diskValue.(string)
+				}
+			case "path":
+				if diskValue != nil {
+					disk.Path = diskValue.(string)
+				}
+			case "children":
+				for _, partElem := range diskValue.([]interface{}) {
+					var partition Partition
+					for partKey, partValue := range partElem.(map[string]interface{}) {
+						switch partKey {
+						case "fstype":
+							if partValue != nil {
+								partition.Type = partValue.(string)
+							}
+						case "mountpoint":
+							if partValue != nil {
+								partition.MountPoint = partValue.(string)
+							}
+						case "fsSize":
+							if partValue != nil {
+								partition.Size = partValue.(string)
+							}
+						case "fsused":
+							if partValue != nil {
+								partition.SizeUsed = partValue.(string)
+							}
+						}
+					}
+					disk.Partitions = append(disk.Partitions, &partition)
 
-		if localDisk.SerialNumber == "unknown" {
-			localDisk.SerialNumber = ""
-		}
-
-		data.Disks = append(data.Disks, &localDisk)
-	}
-
-	partitions, err := disk.Partitions(false)
-
-	if err != nil {
-		log.Printf("Error getting partitions info: %v", err)
-		return nil, err
-	}
-
-	for _, partition := range partitions {
-		usage, _ := disk.Usage(partition.Mountpoint)
-		var localPartition Partition
-		localPartition.Type = usage.Fstype
-		localPartition.MountPoint = partition.Mountpoint
-		localPartition.Size = strconv.FormatUint(usage.Total, 10)
-		localPartition.SizeUsed = strconv.FormatUint(usage.Used, 10)
-		for _, disk := range data.Disks {
-			if strings.Contains(partition.Device, disk.Name) {
-				disk.Partitions = append(disk.Partitions, &localPartition)
+				}
 			}
 		}
+
+		if loop {
+			continue
+		}
+
+		disks.Disks = append(disks.Disks, &disk)
 	}
 
-	return &data, nil
+	if err != nil {
+		log.Printf("Error getting lsblk info: %v", err)
+		return nil, err
+	}
+
+	return &disks, nil
 }

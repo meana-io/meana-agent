@@ -11,14 +11,35 @@ import (
 )
 
 type CpuData struct {
-	Frequency     string `json:"frequency"`
-	CoresQuantity string `json:"coresQuantity"`
-	Manufacture   string `json:"manufacture"`
-	Model         string `json:"model"`
-	Usage         string `json:"usage"`
+	Usage             string `json:"usage"`
+	SocketDesignation string `json:"socketDesignation"`
+	Type              string `json:"type"`
+	Model             string `json:"model"`
+	Manufacture       string `json:"manufacture"`
+	Id                string `json:"id"`
+	Version           string `json:"version"`
+	Voltage           string `json:"voltage"`
+	ExternalClock     string `json:"externalClock"`
+	MaxSpeed          string `json:"maxSpeed"`
+	Frequency         string `json:"frequency"`
+	Status            string `json:"status"`
+	Upgrade           string `json:"upgrade"`
+	L1CacheHandle     string `json:"l1CacheHandle"`
+	L2CacheHandle     string `json:"l2CacheHandle"`
+	L3CacheHandle     string `json:"l3CacheHandle"`
+	SerialNumber      string `json:"serialNumber"`
+	AssetTag          string `json:"assetTag"`
+	PartNumber        string `json:"partNumber"`
+	CoresQuantity     string `json:"coresQuantity"`
+	CoreEnabled       string `json:"coreEnabled"`
+	ThreadCount       string `json:"threadCount"`
+	Characteristics   string `json:"characteristics"`
 }
 
-const CpuLoadInterval = 50 * time.Millisecond
+const CpuLoadInterval = 250 * time.Millisecond
+
+var lastWork uint64 = 0
+var lastTotal uint64 = 0
 
 func GetCpuData() (*CpuData, error) {
 	var data CpuData
@@ -33,10 +54,28 @@ func GetCpuData() (*CpuData, error) {
 
 		byTypeData, _ := dmi.SearchByType(4)
 
-		data.Frequency = byTypeData[0]["Current Speed"]
-		data.CoresQuantity = byTypeData[0]["Core Count"]
-		data.Manufacture = byTypeData[0]["Manufacturer"]
+		data.SocketDesignation = byTypeData[0]["Socket Designation"]
+		data.Type = byTypeData[0]["Type"]
 		data.Model = byTypeData[0]["Family"]
+		data.Manufacture = byTypeData[0]["Manufacturer"]
+		data.Id = byTypeData[0]["ID"]
+		data.Version = byTypeData[0]["Version"]
+		data.Voltage = byTypeData[0]["Voltage"]
+		data.ExternalClock = byTypeData[0]["External Clock"]
+		data.MaxSpeed = byTypeData[0]["Max Speed"]
+		data.Frequency = byTypeData[0]["Current Speed"]
+		data.Status = byTypeData[0]["Status"]
+		data.Upgrade = byTypeData[0]["Upgrade"]
+		data.L1CacheHandle = byTypeData[0]["L1 Cache Handle"]
+		data.L2CacheHandle = byTypeData[0]["L2 Cache Handle"]
+		data.L3CacheHandle = byTypeData[0]["L3 Cache Handle"]
+		data.SerialNumber = byTypeData[0]["Serial Number"]
+		data.AssetTag = byTypeData[0]["Asset Tag"]
+		data.PartNumber = byTypeData[0]["Part Number"]
+		data.CoresQuantity = byTypeData[0]["Core Count"]
+		data.CoreEnabled = byTypeData[0]["Core Enabled"]
+		data.ThreadCount = byTypeData[0]["Thread Count"]
+		data.Characteristics = byTypeData[0]["Characteristics"]
 	}
 
 	usage, err := calculateCpuUsage()
@@ -48,12 +87,23 @@ func GetCpuData() (*CpuData, error) {
 
 	data.Usage = strconv.FormatFloat(usage, 'f', 10, 64)
 
-	log.Printf("%v", data.Usage)
-
 	return &data, nil
 }
 
 func calculateCpuUsage() (float64, error) {
+	if lastWork == 0 {
+		stat, err := linuxproc.ReadStat("/proc/stat")
+		if err != nil {
+			log.Printf("Error getting linuxproc info: %v", err)
+			return 0, err
+		}
+
+		lastWork = stat.CPUStatAll.User + stat.CPUStatAll.Nice + stat.CPUStatAll.System + stat.CPUStatAll.IOWait + stat.CPUStatAll.IRQ + stat.CPUStatAll.SoftIRQ
+		lastTotal = lastWork + stat.CPUStatAll.Idle
+
+		time.Sleep(CpuLoadInterval)
+	}
+
 	stat, err := linuxproc.ReadStat("/proc/stat")
 	if err != nil {
 		log.Printf("Error getting linuxproc info: %v", err)
@@ -65,24 +115,8 @@ func calculateCpuUsage() (float64, error) {
 	work = stat.CPUStatAll.User + stat.CPUStatAll.Nice + stat.CPUStatAll.System + stat.CPUStatAll.IOWait + stat.CPUStatAll.IRQ + stat.CPUStatAll.SoftIRQ
 	total = work + stat.CPUStatAll.Idle
 
-	time.Sleep(CpuLoadInterval)
-
-	stat2, err := linuxproc.ReadStat("/proc/stat")
-	if err != nil {
-		log.Printf("Error getting linuxproc info: %v", err)
-		return 0, err
-	}
-
-	var total2 uint64
-	var work2 uint64
-	work2 = stat2.CPUStatAll.User + stat2.CPUStatAll.Nice + stat2.CPUStatAll.System + stat2.CPUStatAll.IOWait + stat2.CPUStatAll.IRQ + stat2.CPUStatAll.SoftIRQ
-	total2 = work2 + stat2.CPUStatAll.Idle
-
-	totalOver := total2 - total
-	workOver := work2 - work
-
-	log.Printf("%v", totalOver)
-	log.Printf("%v", workOver)
+	totalOver := total - lastTotal
+	workOver := work - lastWork
 
 	var percent float64
 
