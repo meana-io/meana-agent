@@ -48,6 +48,11 @@ func listBlockDevices() (*DiskData, error) {
 		"NAME,KNAME,FSTYPE,TYPE,FSSIZE,FSUSED,VENDOR,MODEL,SERIAL,PATH,MOUNTPOINT,SIZE",
 	).Output()
 
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+
 	var p fastjson.Parser
 	v, err := p.Parse(string(output))
 	if err != nil {
@@ -67,6 +72,7 @@ func listBlockDevices() (*DiskData, error) {
 		disk.Name = string(diskElem.GetStringBytes("kname"))
 		disk.Size = strconv.FormatUint(diskElem.GetUint64("size"), 10)
 		disk.Vendor = string(diskElem.GetStringBytes("vendor"))
+		disk.Model = string(diskElem.GetStringBytes("model"))
 		disk.SerialNumber = string(diskElem.GetStringBytes("serial"))
 		disk.Path = string(diskElem.GetStringBytes("path"))
 
