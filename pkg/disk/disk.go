@@ -99,7 +99,6 @@ func listBlockDevices() (*DiskData, error) {
 
 		disks.Disks = append(disks.Disks, &disk)
 	}
-	log.Printf("%v", disks.Disks[2].Partitions[0].Type)
 
 	return &disks, nil
 }
