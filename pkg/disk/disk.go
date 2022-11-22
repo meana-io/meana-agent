@@ -44,13 +44,8 @@ func listBlockDevices() (*DiskData, error) {
 		"-b", // output size in bytes
 		"-J", // output fields as key=value pairs
 		"-o",
-		"KNAME,FSTYPE,TYPE,FSSIZE,FSUSED,VENDOR,MODEL,SERIAL,PATH,MOUNTPOINT",
+		"NAME,KNAME,FSTYPE,TYPE,FSSIZE,FSUSED,VENDOR,MODEL,SERIAL,PATH,MOUNTPOINT",
 	).Output()
-
-	if err != nil {
-		log.Fatal(err)
-		return nil, err
-	}
 
 	var p fastjson.Parser
 	v, err := p.Parse(string(output))
@@ -84,12 +79,27 @@ func listBlockDevices() (*DiskData, error) {
 				partition.Size = string(partitionElem.GetStringBytes("fssize"))
 				partition.SizeUsed = string(partitionElem.GetStringBytes("fsused"))
 
+				if partitionElem.Exists("children") {
+					var partitions = diskElem.GetArray("children")
+
+					for _, partitionElem := range partitions {
+						var partition Partition
+						partition.Type = string(partitionElem.GetStringBytes("fstype"))
+						partition.MountPoint = string(partitionElem.GetStringBytes("mountpoint"))
+						partition.Size = string(partitionElem.GetStringBytes("fssize"))
+						partition.SizeUsed = string(partitionElem.GetStringBytes("fsused"))
+
+						disk.Partitions = append(disk.Partitions, &partition)
+					}
+				}
+
 				disk.Partitions = append(disk.Partitions, &partition)
 			}
 		}
 
 		disks.Disks = append(disks.Disks, &disk)
 	}
+	log.Printf("%v", disks.Disks[2].Partitions[0].Type)
 
 	return &disks, nil
 }
