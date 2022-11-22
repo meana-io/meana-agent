@@ -3,6 +3,7 @@ package disk
 import (
 	"log"
 	"os/exec"
+	"strconv"
 
 	fastjson "github.com/valyala/fastjson"
 )
@@ -64,7 +65,7 @@ func listBlockDevices() (*DiskData, error) {
 		}
 		var disk Disk
 		disk.Name = string(diskElem.GetStringBytes("kname"))
-		disk.Size = string(diskElem.GetStringBytes("size"))
+		disk.Size = strconv.FormatUint(diskElem.GetUint64("size"), 10)
 		disk.Vendor = string(diskElem.GetStringBytes("vendor"))
 		disk.SerialNumber = string(diskElem.GetStringBytes("serial"))
 		disk.Path = string(diskElem.GetStringBytes("path"))
