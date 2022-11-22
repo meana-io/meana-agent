@@ -44,7 +44,7 @@ func listBlockDevices() (*DiskData, error) {
 		"-b", // output size in bytes
 		"-J", // output fields as key=value pairs
 		"-o",
-		"NAME,KNAME,FSTYPE,TYPE,FSSIZE,FSUSED,VENDOR,MODEL,SERIAL,PATH,MOUNTPOINT",
+		"NAME,KNAME,FSTYPE,TYPE,FSSIZE,FSUSED,VENDOR,MODEL,SERIAL,PATH,MOUNTPOINT,SIZE",
 	).Output()
 
 	var p fastjson.Parser
@@ -64,7 +64,7 @@ func listBlockDevices() (*DiskData, error) {
 		}
 		var disk Disk
 		disk.Name = string(diskElem.GetStringBytes("kname"))
-		disk.Size = string(diskElem.GetStringBytes("fssize"))
+		disk.Size = string(diskElem.GetStringBytes("size"))
 		disk.Vendor = string(diskElem.GetStringBytes("vendor"))
 		disk.SerialNumber = string(diskElem.GetStringBytes("serial"))
 		disk.Path = string(diskElem.GetStringBytes("path"))
