@@ -89,11 +89,15 @@ func listBlockDevices() (*DiskData, error) {
 						partition.Size = string(partitionElem.GetStringBytes("fssize"))
 						partition.SizeUsed = string(partitionElem.GetStringBytes("fsused"))
 
-						disk.Partitions = append(disk.Partitions, &partition)
+						if len(partition.MountPoint) > 0 {
+							disk.Partitions = append(disk.Partitions, &partition)
+						}
 					}
 				}
 
-				disk.Partitions = append(disk.Partitions, &partition)
+				if len(partition.MountPoint) > 0 {
+					disk.Partitions = append(disk.Partitions, &partition)
+				}
 			}
 		}
 
