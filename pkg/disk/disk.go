@@ -1,7 +1,6 @@
 package disk
 
 import (
-	"encoding/json"
 	"log"
 	"os/exec"
 
@@ -40,7 +39,6 @@ func GetDiskData() (*DiskData, error) {
 }
 
 func listBlockDevices() (*DiskData, error) {
-	var myStoredVariable map[string]any
 	output, err := exec.Command(
 		"lsblk",
 		"-b", // output size in bytes
@@ -49,16 +47,13 @@ func listBlockDevices() (*DiskData, error) {
 		"KNAME,FSTYPE,TYPE,FSSIZE,FSUSED,VENDOR,MODEL,SERIAL,PATH,MOUNTPOINT",
 	).Output()
 
-	json.Unmarshal(output, &myStoredVariable)
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
 
 	var p fastjson.Parser
-	v, err := p.Parse(`{   "blockdevices": [
-		{"kname":"sda", "fstype":null, "type":"disk", "fssize":null, "fsused":null, "vendor":"Msft    ", "model":"Virtual Disk    ", "serial":null, "path":"/dev/sda", "mountpoint":null},
-		{"kname":"sdb", "fstype":null, "type":"disk", "fssize":null, "fsused":null, "vendor":"Msft    ", "model":"Virtual Disk    ", "serial":null, "path":"/dev/sdb", "mountpoint":null},
-		{"kname":"sdc", "fstype":null, "type":"disk", "fssize":"269490393088", "fsused":"4594540544", "vendor":"Msft    ", "model":"Virtual Disk    ", "serial":null, "path":"/dev/sdc", "mountpoint":"/", "children" : [
-			{"kname":"sdb", "fstype":null, "type":"disk", "fssize":null, "fsused":null, "vendor":"Msft    ", "model":"Virtual Disk    ", "serial":null, "path":"/dev/sdb", "mountpoint":null}
-		]}
-	 ]}`)
+	v, err := p.Parse(string(output))
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
