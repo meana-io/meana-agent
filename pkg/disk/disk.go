@@ -80,7 +80,7 @@ func listBlockDevices() (*DiskData, error) {
 				partition.SizeUsed = string(partitionElem.GetStringBytes("fsused"))
 
 				if partitionElem.Exists("children") {
-					var partitions2 = diskElem.GetArray("children")
+					var partitions2 = partitionElem.GetArray("children")
 
 					for _, partitionElem2 := range partitions2 {
 						var partition2 Partition
