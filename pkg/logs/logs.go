@@ -80,8 +80,6 @@ func UploadLogsData(url string, nodeUuid string) error {
 		if resp.StatusCode != 200 && resp.StatusCode != 201 {
 			return fmt.Errorf("error uploading data, status code: %v", resp.StatusCode)
 		}
-
-		fmt.Println(mpw)
 	}
 
 	return nil
