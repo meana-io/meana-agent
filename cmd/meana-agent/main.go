@@ -28,7 +28,6 @@ type AgentData struct {
 	Disks []*disk.Disk     `json:"disks"`
 	Ram   *ram.RamData     `json:"ram"`
 	Cpu   *cpu.CpuData     `json:"cpu"`
-	Logs  *logs.LogsData   `json:"logs"`
 	Apps  *apps.AppsData   `json:"apps"`
 	Users *users.UsersData `json:"users"`
 }
@@ -69,12 +68,6 @@ func CollectData() (*AgentData, error) {
 		return nil, err
 	}
 
-	logsData, err := logs.GetLogsData()
-
-	if err != nil {
-		return nil, err
-	}
-
 	appsData, err := apps.GetAppsData()
 
 	if err != nil {
@@ -91,7 +84,6 @@ func CollectData() (*AgentData, error) {
 	data.Disks = diskData.Disks
 	data.Ram = ramData
 	data.Cpu = cpuData
-	data.Logs = logsData
 	data.Apps = appsData
 	data.Users = usersData
 
@@ -142,6 +134,13 @@ func HandleAgentError(err error) {
 }
 
 func AgentRoutine() {
+
+	err := logs.UploadLogsData(os.Getenv("MEANA_SERVER_ADDR"), os.Getenv("MEANA_UUID"))
+
+	if err != nil {
+		HandleAgentError(fmt.Errorf("error sending logs: %v", err))
+	}
+
 	data, err := CollectData()
 	if err != nil {
 		HandleAgentError(fmt.Errorf("error collecting agent data: %v", err))
