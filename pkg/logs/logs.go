@@ -1,8 +1,6 @@
 package logs
 
-import (
-	"os/exec"
-)
+import "io/ioutil"
 
 type LogsData struct {
 	Logs map[string]string `json:"logs"`
@@ -16,11 +14,7 @@ func GetLogsData() (*LogsData, error) {
 	logsData.Logs = make(map[string]string)
 
 	for _, logFile := range LogFiles {
-		output, err := exec.Command(
-			"tail",
-			"-500",
-			"/var/log/"+logFile,
-		).Output()
+		output, err := ioutil.ReadFile("/var/log/" + logFile)
 
 		if err != nil {
 			continue

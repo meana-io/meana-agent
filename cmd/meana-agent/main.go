@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/meana-io/meana-agent/pkg/apps"
 	"github.com/meana-io/meana-agent/pkg/cpu"
 	"github.com/meana-io/meana-agent/pkg/disk"
 	"github.com/meana-io/meana-agent/pkg/logs"
@@ -27,6 +28,7 @@ type AgentData struct {
 	Ram   *ram.RamData   `json:"ram"`
 	Cpu   *cpu.CpuData   `json:"cpu"`
 	Logs  *logs.LogsData `json:"logs"`
+	Apps  *apps.AppsData `json:"apps"`
 }
 
 func ValidateEnv() error {
@@ -71,11 +73,18 @@ func CollectData() (*AgentData, error) {
 		return nil, err
 	}
 
+	appsData, err := apps.GetAppsData()
+
+	if err != nil {
+		return nil, err
+	}
+
 	data.Uuid = os.Getenv("MEANA_UUID")
 	data.Disks = diskData.Disks
 	data.Ram = ramData
 	data.Cpu = cpuData
 	data.Logs = logsData
+	data.Apps = appsData
 
 	return &data, nil
 }
