@@ -63,7 +63,7 @@ func UploadLogsData(url string, nodeUuid string) error {
 			continue
 		}
 
-		req, err := http.NewRequest("POST", url, &buf)
+		req, err := http.NewRequest("POST", url+"/api/logs/upload", &buf)
 		req.Header.Set("Content-Type", mpw.FormDataContentType())
 		if err != nil {
 			return err
