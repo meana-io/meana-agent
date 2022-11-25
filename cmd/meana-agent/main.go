@@ -76,6 +76,7 @@ func CollectData() (*AgentData, error) {
 		if err != nil {
 			return nil, err
 		}
+		data.Apps = appsData
 		appsCollected = true
 	}
 
@@ -89,7 +90,6 @@ func CollectData() (*AgentData, error) {
 	data.Disks = diskData.Disks
 	data.Ram = ramData
 	data.Cpu = cpuData
-	data.Apps = appsData
 	data.Users = usersData
 
 	return &data, nil
