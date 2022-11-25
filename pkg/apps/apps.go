@@ -19,8 +19,6 @@ type App struct {
 func GetAppsData() (*AppsData, error) {
 	var appsData AppsData
 
-	appsData.Apps = make(map[string]App)
-
 	output, err := exec.Command(
 		"apt",
 		"list",
