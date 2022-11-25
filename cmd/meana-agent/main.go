@@ -28,7 +28,7 @@ type AgentData struct {
 	Disks []*disk.Disk     `json:"disks"`
 	Ram   *ram.RamData     `json:"ram"`
 	Cpu   *cpu.CpuData     `json:"cpu"`
-	Apps  *apps.AppsData   `json:"apps"`
+	Apps  *apps.AppsData   `json:"packages"`
 	Users *users.UsersData `json:"users"`
 }
 
