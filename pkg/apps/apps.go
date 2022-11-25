@@ -7,11 +7,12 @@ import (
 )
 
 type AppsData struct {
-	Apps map[string]App `json:"apps"`
+	Apps []App `json:"packages"`
 }
 
 type App struct {
-	Version    string `json:"version"`
+	Name    string `json:"packageName"`
+	Version    string `json:"packageVersion"`
 	Upgradable bool   `json:"upgradable"`
 }
 
@@ -35,9 +36,10 @@ func GetAppsData() (*AppsData, error) {
 		split := strings.Split(app, " ")
 		if len(split) > 1 {
 			var app App
+			app.Name = strings.Split(split[0], "/")[0]
 			app.Version = split[1]
 			app.Upgradable = strings.Contains(split[3], "upgradable")
-			appsData.Apps[strings.Split(split[0], "/")[0]] = app
+			appsData.Apps = append(appsData.Apps, app)
 		}
 	}
 
