@@ -48,6 +48,8 @@ func ValidateEnv() error {
 	return nil
 }
 
+var appsCollected = false
+
 func CollectData() (*AgentData, error) {
 	var data AgentData
 	diskData, err := disk.GetDiskData()
@@ -68,10 +70,13 @@ func CollectData() (*AgentData, error) {
 		return nil, err
 	}
 
-	appsData, err := apps.GetAppsData()
+	if appsCollected == false {
+		appsData, err := apps.GetAppsData()
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+		appsCollected = true
 	}
 
 	usersData, err := users.GetUsersData()
