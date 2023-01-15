@@ -48,6 +48,8 @@ func listInterfaces() (*UsbData, error) {
 		var inter UsbInterface
 		inter.Port = "usb"
 		inter.Name = getDeviceName(usbDevice)
+
+		usb.Interfaces = append(usb.Interfaces, &inter)
 	}
 
 	return &usb, nil
