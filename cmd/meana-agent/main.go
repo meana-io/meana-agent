@@ -14,22 +14,29 @@ import (
 	"github.com/meana-io/meana-agent/pkg/cpu"
 	"github.com/meana-io/meana-agent/pkg/disk"
 	"github.com/meana-io/meana-agent/pkg/logs"
+	"github.com/meana-io/meana-agent/pkg/network"
 	"github.com/meana-io/meana-agent/pkg/ram"
+	"github.com/meana-io/meana-agent/pkg/usb"
 	"github.com/meana-io/meana-agent/pkg/users"
 	"github.com/meana-io/meana-agent/pkg/util"
 )
 
 const AgentInterval = 5 * time.Second
+const AgentLogsInterval = time.Hour
+
+var lastSentLogs int64 = 0
 
 var Debug bool = false
 
 type AgentData struct {
-	Uuid  string           `json:"nodeUuid"`
-	Disks []*disk.Disk     `json:"disks"`
-	Ram   *ram.RamData     `json:"ram"`
-	Cpu   *cpu.CpuData     `json:"cpu"`
-	Apps  *apps.AppsData   `json:"apps"`
-	Users *users.UsersData `json:"users"`
+	Uuid         string                      `json:"nodeUuid"`
+	Disks        []*disk.Disk                `json:"disks"`
+	Ram          *ram.RamData                `json:"ram"`
+	Cpu          *cpu.CpuData                `json:"cpu"`
+	Apps         *apps.AppsData              `json:"apps"`
+	Users        *users.UsersData            `json:"users"`
+	NetworkCards []*network.NetworkInterface `json:"networkCards"`
+	Devices      []*usb.UsbInterface         `json:"devices"`
 }
 
 func ValidateEnv() error {
@@ -80,12 +87,26 @@ func CollectData() (*AgentData, error) {
 		return nil, err
 	}
 
+	networkData, err := network.GetNetworkData()
+
+	if err != nil {
+		return nil, err
+	}
+
+	usbData, err := usb.GetUsbData()
+
+	if err != nil {
+		return nil, err
+	}
+
 	data.Uuid = os.Getenv("MEANA_UUID")
 	data.Disks = diskData.Disks
 	data.Ram = ramData
 	data.Cpu = cpuData
 	data.Apps = appsData
 	data.Users = usersData
+	data.NetworkCards = networkData.Interfaces
+	data.Devices = usbData.Interfaces
 
 	return &data, nil
 }
@@ -134,11 +155,15 @@ func HandleAgentError(err error) {
 }
 
 func AgentRoutine() {
+	if lastSentLogs == 0 || lastSentLogs+AgentLogsInterval.Nanoseconds() < time.Now().UnixNano() {
+		err := logs.UploadLogsData(os.Getenv("MEANA_SERVER_ADDR"), os.Getenv("MEANA_UUID"))
 
-	err := logs.UploadLogsData(os.Getenv("MEANA_SERVER_ADDR"), os.Getenv("MEANA_UUID"))
+		if err != nil {
+			HandleAgentError(fmt.Errorf("error sending logs: %v", err))
+		}
 
-	if err != nil {
-		HandleAgentError(fmt.Errorf("error sending logs: %v", err))
+		fmt.Println("aaa")
+		lastSentLogs = time.Now().UnixNano()
 	}
 
 	data, err := CollectData()

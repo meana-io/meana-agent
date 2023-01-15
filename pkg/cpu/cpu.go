@@ -16,7 +16,7 @@ type CpuData struct {
 	Type              string `json:"type"`
 	Model             string `json:"model"`
 	Manufacture       string `json:"manufacture"`
-	Id                string `json:"id"`
+	Id                string `json:"cpuId"`
 	Version           string `json:"version"`
 	Voltage           string `json:"voltage"`
 	ExternalClock     string `json:"externalClock"`
