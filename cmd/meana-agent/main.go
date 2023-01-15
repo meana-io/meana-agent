@@ -167,7 +167,6 @@ func AgentRoutine() {
 			HandleAgentError(fmt.Errorf("error sending logs: %v", err))
 		}
 
-		fmt.Println("aaa")
 		lastSentLogs = time.Now().UnixNano()
 	}
 
