@@ -121,6 +121,9 @@ func calculateCpuUsage() (float64, error) {
 	var percent float64
 
 	percent = float64(workOver) / float64(totalOver) * 100
+	
+	lastTotal = total
+	lastWork = work
 
 	return percent, nil
 }

@@ -33,7 +33,7 @@ type AgentData struct {
 	Disks        []*disk.Disk                `json:"disks"`
 	Ram          *ram.RamData                `json:"ram"`
 	Cpu          *cpu.CpuData                `json:"cpu"`
-	Apps         *apps.AppsData              `json:"apps"`
+	Apps         *apps.AppsData              `json:"packages"`
 	Users        *users.UsersData            `json:"users"`
 	NetworkCards []*network.NetworkInterface `json:"networkCards"`
 	Devices      []*usb.UsbInterface         `json:"devices"`
@@ -55,6 +55,8 @@ func ValidateEnv() error {
 	return nil
 }
 
+var appsCollected = false
+
 func CollectData() (*AgentData, error) {
 	var data AgentData
 	diskData, err := disk.GetDiskData()
@@ -75,10 +77,14 @@ func CollectData() (*AgentData, error) {
 		return nil, err
 	}
 
-	appsData, err := apps.GetAppsData()
+	if appsCollected == false {
+		appsData, err := apps.GetAppsData()
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+		data.Apps = appsData
+		appsCollected = true
 	}
 
 	usersData, err := users.GetUsersData()
@@ -103,7 +109,6 @@ func CollectData() (*AgentData, error) {
 	data.Disks = diskData.Disks
 	data.Ram = ramData
 	data.Cpu = cpuData
-	data.Apps = appsData
 	data.Users = usersData
 	data.NetworkCards = networkData.Interfaces
 	data.Devices = usbData.Interfaces
