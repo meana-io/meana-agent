@@ -165,9 +165,9 @@ func AgentRoutine() {
 
 		if err != nil {
 			HandleAgentError(fmt.Errorf("error sending logs: %v", err))
+		} else {
+			lastSentLogs = time.Now().UnixNano()
 		}
-
-		lastSentLogs = time.Now().UnixNano()
 	}
 
 	data, err := CollectData()
