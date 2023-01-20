@@ -44,12 +44,21 @@ var lastTotal uint64 = 0
 func GetCpuData() (*CpuData, error) {
 	var data CpuData
 
+	usage, err := calculateCpuUsage()
+
+	if err != nil {
+		log.Printf("Error getting cpu usage info: %v", err)
+		return nil, err
+	}
+
+	data.Usage = strconv.FormatFloat(usage, 'f', 10, 64)
+
 	if os.Getenv("MEANA_DISABLE_DMIDECODE") == "" {
 		dmi := dmidecode.New()
 
 		if err := dmi.Run(); err != nil {
 			log.Printf("Error getting dmidecode info: %v", err)
-			return nil, err
+			return &data, err
 		}
 
 		byTypeData, _ := dmi.SearchByType(4)
@@ -77,15 +86,6 @@ func GetCpuData() (*CpuData, error) {
 		data.ThreadCount = byTypeData[0]["Thread Count"]
 		data.Characteristics = byTypeData[0]["Characteristics"]
 	}
-
-	usage, err := calculateCpuUsage()
-
-	if err != nil {
-		log.Printf("Error getting cpu usage info: %v", err)
-		return nil, err
-	}
-
-	data.Usage = strconv.FormatFloat(usage, 'f', 10, 64)
 
 	return &data, nil
 }
@@ -121,7 +121,7 @@ func calculateCpuUsage() (float64, error) {
 	var percent float64
 
 	percent = float64(workOver) / float64(totalOver) * 100
-	
+
 	lastTotal = total
 	lastWork = work
 

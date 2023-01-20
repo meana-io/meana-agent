@@ -42,12 +42,18 @@ type Ram struct {
 func GetRamData() (*RamData, error) {
 	var ramData RamData
 
+	total := mem.TotalMemory()
+	free := mem.FreeMemory()
+
+	ramData.Total = strconv.FormatUint(total, 10)
+	ramData.Used = strconv.FormatUint(total-free, 10)
+
 	if os.Getenv("MEANA_DISABLE_DMIDECODE") == "" {
 		dmi := dmidecode.New()
 
 		if err := dmi.Run(); err != nil {
 			log.Printf("Error getting dmidecode info: %v", err)
-			return nil, err
+			return &ramData, err
 		}
 
 		byTypeData, _ := dmi.SearchByType(17)
@@ -80,12 +86,6 @@ func GetRamData() (*RamData, error) {
 			ramData.Rams = append(ramData.Rams, &data)
 		}
 	}
-
-	total := mem.TotalMemory()
-	free := mem.FreeMemory()
-
-	ramData.Total = strconv.FormatUint(total, 10)
-	ramData.Used = strconv.FormatUint(total-free, 10)
 
 	return &ramData, nil
 }

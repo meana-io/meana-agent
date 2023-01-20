@@ -1,15 +1,20 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
-	"github.com/joho/godotenv"
+	"github.com/gookit/config/v2"
+	"github.com/gookit/config/v2/yamlv3"
+
 	"github.com/meana-io/meana-agent/pkg/apps"
 	"github.com/meana-io/meana-agent/pkg/cpu"
 	"github.com/meana-io/meana-agent/pkg/disk"
@@ -39,16 +44,16 @@ type AgentData struct {
 	Devices      []*usb.UsbInterface         `json:"devices"`
 }
 
-func ValidateEnv() error {
-	if os.Getenv("MEANA_SERVER_ADDR") == "" {
+func ValidateConfig() error {
+	if config.String("server_addr") == "" {
 		return fmt.Errorf("meana server address not specified")
 	}
 
-	if os.Getenv("MEANA_UUID") == "" {
+	if config.String("uuid") == "" {
 		return fmt.Errorf("meana uuid not specified")
 	}
 
-	if os.Getenv("MEANA_DEBUG") == "true" {
+	if config.String("debug") == "true" {
 		Debug = true
 	}
 
@@ -59,59 +64,54 @@ var appsCollected = false
 
 func CollectData() (*AgentData, error) {
 	var data AgentData
+
+	data.Uuid = config.String("uuid")
+
 	diskData, err := disk.GetDiskData()
 
-	if err != nil {
-		return nil, err
+	if err == nil {
+		data.Disks = diskData.Disks
 	}
 
 	ramData, err := ram.GetRamData()
 
-	if err != nil {
-		return nil, err
+	if ramData != nil {
+		data.Ram = ramData
 	}
 
 	cpuData, err := cpu.GetCpuData()
 
-	if err != nil {
-		return nil, err
+	if cpuData != nil {
+		data.Cpu = cpuData
 	}
 
 	if appsCollected == false {
 		appsData, err := apps.GetAppsData()
 
-		if err != nil {
-			return nil, err
+		if err == nil {
+			data.Apps = appsData
 		}
-		data.Apps = appsData
+
 		appsCollected = true
 	}
 
 	usersData, err := users.GetUsersData()
 
-	if err != nil {
-		return nil, err
+	if err == nil {
+		data.Users = usersData
 	}
 
 	networkData, err := network.GetNetworkData()
 
-	if err != nil {
-		return nil, err
+	if err == nil {
+		data.NetworkCards = networkData.Interfaces
 	}
 
 	usbData, err := usb.GetUsbData()
 
-	if err != nil {
-		return nil, err
+	if err == nil {
+		data.Devices = usbData.Interfaces
 	}
-
-	data.Uuid = os.Getenv("MEANA_UUID")
-	data.Disks = diskData.Disks
-	data.Ram = ramData
-	data.Cpu = cpuData
-	data.Users = usersData
-	data.NetworkCards = networkData.Interfaces
-	data.Devices = usbData.Interfaces
 
 	return &data, nil
 }
@@ -130,7 +130,7 @@ func UploadData(data *AgentData) error {
 		log.Println(util.PrettyPrint(data))
 	}
 
-	req, err := http.NewRequest(http.MethodPost, os.Getenv("MEANA_SERVER_ADDR")+"/api/global/", responseBody)
+	req, err := http.NewRequest(http.MethodPost, "http://"+config.String("server_addr")+"/api/global/", responseBody)
 	req.Header.Set("Content-Type", "application/json")
 	if err != nil {
 		return err
@@ -161,7 +161,7 @@ func HandleAgentError(err error) {
 
 func AgentRoutine() {
 	if lastSentLogs == 0 || lastSentLogs+AgentLogsInterval.Nanoseconds() < time.Now().UnixNano() {
-		err := logs.UploadLogsData(os.Getenv("MEANA_SERVER_ADDR"), os.Getenv("MEANA_UUID"))
+		err := logs.UploadLogsData("http://"+config.String("server_addr"), config.String("uuid"))
 
 		if err != nil {
 			HandleAgentError(fmt.Errorf("error sending logs: %v", err))
@@ -183,17 +183,43 @@ func AgentRoutine() {
 	}
 }
 
-func main() {
-	err := godotenv.Load()
+func getInitialConfig() {
+	fmt.Println("---------------------")
+	fmt.Println("Provide meana config")
 
+	fmt.Print("Enter server address: ")
+	reader := bufio.NewReader(os.Stdin)
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimSuffix(input, "\n")
+	config.Set("server_addr", input)
+
+	fmt.Print("Enter UUID: ")
+	reader = bufio.NewReader(os.Stdin)
+	input, _ = reader.ReadString('\n')
+	input = strings.TrimSuffix(input, "\n")
+	config.Set("uuid", input)
+
+	buf := new(bytes.Buffer)
+
+	config.DumpTo(buf, config.Yaml)
+	ioutil.WriteFile("meana-config.yml", buf.Bytes(), 0755)
+
+	fmt.Println("---------------------")
+}
+
+func main() {
+	config.WithOptions(config.ParseEnv)
+	config.AddDriver(yamlv3.Driver)
+
+	err := config.LoadFiles("./meana-config.yml")
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		getInitialConfig()
 	}
 
-	err = ValidateEnv()
+	err = ValidateConfig()
 
 	if err != nil {
-		log.Fatalf("Error validating .env: %v", err)
+		log.Fatalf("Error validating config: %v", err)
 	}
 
 	for {
