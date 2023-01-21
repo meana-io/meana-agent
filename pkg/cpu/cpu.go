@@ -57,7 +57,6 @@ func GetCpuData() (*CpuData, error) {
 		dmi := dmidecode.New()
 
 		if err := dmi.Run(); err != nil {
-			log.Printf("Error getting dmidecode info: %v", err)
 			return &data, err
 		}
 

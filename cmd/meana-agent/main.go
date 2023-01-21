@@ -222,6 +222,8 @@ func main() {
 		log.Fatalf("Error validating config: %v", err)
 	}
 
+	log.Println("Agent starting")
+
 	for {
 		go AgentRoutine()
 		time.Sleep(AgentInterval)
