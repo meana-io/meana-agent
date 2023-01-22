@@ -9,7 +9,7 @@ You need to run agent at least once to create initial configuration file:
 
 ```bash
 cd dist
-./meana
+sudo ./meana
 ```
 
 ```
