@@ -2,10 +2,11 @@ package ram
 
 import (
 	"os"
-	"strconv"
+	"os/exec"
+	"regexp"
+	"strings"
 
 	"github.com/dselans/dmidecode"
-	mem "github.com/pbnjay/memory"
 )
 
 type RamData struct {
@@ -41,11 +42,25 @@ type Ram struct {
 func GetRamData() (*RamData, error) {
 	var ramData RamData
 
-	total := mem.TotalMemory()
-	free := mem.FreeMemory()
+	output, err := exec.Command(
+		"free",
+		"-b",
+	).Output()
 
-	ramData.Total = strconv.FormatUint(total, 10)
-	ramData.Used = strconv.FormatUint(total-free, 10)
+	if err != nil {
+		return nil, err
+	}
+
+	split := strings.Split(string(output), "\n")[1]
+
+	re := regexp.MustCompile(`\d+`)
+	match := re.FindAllStringSubmatch(split, -1)
+
+	total := match[0][0]
+	used := match[1][0]
+
+	ramData.Total = total
+	ramData.Used = used
 
 	if os.Getenv("MEANA_DISABLE_DMIDECODE") == "" {
 		dmi := dmidecode.New()

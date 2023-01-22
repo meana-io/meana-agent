@@ -11,7 +11,7 @@ type AppsData struct {
 }
 
 type App struct {
-	Name    string `json:"packageName"`
+	Name       string `json:"packageName"`
 	Version    string `json:"packageVersion"`
 	Upgradable bool   `json:"upgradable"`
 }
